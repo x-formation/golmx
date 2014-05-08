@@ -16,7 +16,6 @@ type TokenDependency struct {
 		Minor int
 	}
 	Count int
-	Next  *TokenDependency
 }
 
 // DynamicReservation
@@ -25,7 +24,6 @@ type DynamicReservation struct {
 	InitialCount int
 	Count        int
 	Expire       time.Time
-	Next         *DynamicReservation
 }
 
 // HostID
@@ -37,29 +35,30 @@ type HostID struct {
 
 // FeatureInfo
 type FeatureInfo struct {
-	Blacklisted bool
-	Name        string
-	Vendor      string
-	Comment     string
-	Data        string
-	Licensee    string
-	Options     string
-	Serial      string
-	Path        string
-	ID          string
-	Key         string
-	KeyComment  string
-	Port        int
-	SoftLimit   int
-	TrialUses   int
-	KeyType     KeyType
-	LicenseType LicenseType
-	Share       ShareType
-	MinCheckout time.Duration
-	Hold        time.Duration
-	Borrow      time.Duration
-	Grace       time.Duration
-	Version     struct {
+	Blacklisted  bool
+	Name         string
+	Vendor       string
+	Comment      string
+	Data         string
+	Licensee     string
+	Options      string
+	Serial       string
+	Path         string
+	ID           string
+	Key          string
+	KeyComment   string
+	Port         int
+	SoftLimit    int
+	TrialUses    int
+	KeyType      KeyType
+	LicenseType  LicenseType
+	Share        []ShareType
+	MinCheckout  time.Duration
+	Hold         time.Duration
+	Borrow       time.Duration
+	ActualBorrow time.Duration
+	Grace        time.Duration
+	Version      struct {
 		Major int
 		Minor int
 	}
@@ -143,7 +142,7 @@ type LicenseInfo struct {
 	Path          string
 	Port          int
 	Version       string
-	UptimeSeconds int
+	UptimeSeconds time.Duration
 	Features      []FeatureInfo
 	Users         []UserInfo
 }

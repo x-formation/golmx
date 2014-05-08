@@ -27,6 +27,16 @@ const (
 	ShareSingle   = ShareType(C.LMX_SHARE_SINGLE)
 )
 
+var ShareTypeAll = []ShareType{
+	ShareNone,
+	ShareHost,
+	ShareUser,
+	ShareCustom,
+	ShareTerminal,
+	ShareVirtual,
+	ShareSingle,
+}
+
 // KeyType
 type KeyType uint8
 
@@ -100,6 +110,7 @@ const (
 	OptClientHostIDToServer             = OptionType(C.LMX_OPT_CLIENT_HOSTIDS_TO_SERVER)
 	OptHostIDEnabled                    = OptionType(C.LMX_OPT_HOSTID_ENABLED)
 	OptHostIDDisabled                   = OptionType(C.LMX_OPT_HOSTID_DISABLED)
+	OptAllowCheckoutLessLicenses        = OptionType(C.LMX_OPT_ALLOW_CHECKOUT_LESS_LICENSES)
 )
 
 // PlatformType
@@ -138,10 +149,10 @@ var PlatformAll = []*PlatformType{
 }
 
 // ClockCheckType
-type ClockCheckType []byte
+type ClockCheckType uint8
 
-var (
-	ClockInternet = ClockCheckType("INTERNET")
-	ClockLocal    = ClockCheckType("LOCAL")
-	ClockDisabled = ClockCheckType("FALSE")
+const (
+	ClockInternet ClockCheckType = 2
+	ClockLocal    ClockCheckType = 1
+	ClockDisabled ClockCheckType = 0
 )

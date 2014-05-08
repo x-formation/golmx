@@ -1,20 +1,19 @@
 package lmx
 
-// #include <string.h>
-// #include <lmx.h>
-// #cgo linux freebsd LDFLAGS: -llmxclient -ldl
-// LMX_HOSTID* AllocMaxHostID() {
-//   return (LMX_HOSTID*)(malloc(LMX_MAX_HOSTIDS * sizeof(LMX_HOSTID)));
-// }
-// char* AllocLongString() {
-//   return (char*)(malloc(LMX_MAX_LONG_STRING_LENGTH * sizeof(char)));
-// }
-// LMX_HOSTID* IterHostID(LMX_HOSTID *h, int i) {
-//   return &h[i];
-// }
-// void* IntToPtr(int i) {
-//   return (void*)(uintptr_t)(i);
-// }
+/*
+#include <string.h>
+#include <lmx.h>
+#cgo linux freebsd LDFLAGS: -llmxclient -ldl
+LMX_HOSTID* AllocMaxHostID() {
+	return (LMX_HOSTID*)(malloc(LMX_MAX_HOSTIDS * sizeof(LMX_HOSTID)));
+}
+char* AllocLongString() {
+	return (char*)(malloc(LMX_MAX_LONG_STRING_LENGTH * sizeof(char)));
+}
+LMX_FEATURE_INFO* AllocFeatureInfo() {
+	return (LMX_FEATURE_INFO*)(malloc(sizeof(LMX_FEATURE_INFO)));
+}
+*/
 import "C"
 
 import (
@@ -53,9 +52,8 @@ func NewClient() (Client, error) {
 	c := &cgoClient{}
 
 	if s := Status(C.LMX_Init((*C.LMX_HANDLE)(unsafe.Pointer(&c.handle)))); s != StatSuccess {
-		return nil, lookupError(s)
+		return nil, LookupError(s)
 	}
-
 	return c, nil
 }
 
@@ -73,8 +71,8 @@ func (c *cgoClient) Checkout(feature string, major, minor, count int) error {
 	cfeature := C.CString(feature)
 	defer C.free(unsafe.Pointer(cfeature))
 
-	s := Status(C.LMX_Checkout(c.handle, cfeature, C.int(major), C.int(minor), C.int(count)))
-	return lookupError(s)
+	return LookupError(Status(
+		C.LMX_Checkout(c.handle, cfeature, C.int(major), C.int(minor), C.int(count))))
 }
 
 // Checkin TODO(rjeczalik)
@@ -82,87 +80,8 @@ func (c *cgoClient) Checkin(feature string, count int) error {
 	cfeature := C.CString(feature)
 	defer C.free(unsafe.Pointer(cfeature))
 
-	s := Status(C.LMX_Checkin(c.handle, cfeature, C.int(count)))
-	return lookupError(s)
-}
-
-// SetOption TODO(rjeczalik)
-func (c *cgoClient) SetOption(option OptionType, value interface{}) error {
-	s := StatInvalidParameter
-	switch option {
-	case OptExactVersion, OptAllowBorrow, OptAllowGrace, OptTrialVirtualMachine,
-		OptTrialTerminalServer, OptBlacklist, OptAllowMultipleServers, OptClientHostIDToServer:
-		var ok unsafe.Pointer
-		if value != nil {
-			switch value := value.(type) {
-			case int:
-				if value == 1 {
-					ok = unsafe.Pointer(C.IntToPtr(1))
-				}
-			case bool:
-				if value {
-					ok = unsafe.Pointer(C.IntToPtr(1))
-				}
-			default:
-				return ErrInvalidParameter
-			}
-		}
-		s = Status(C.LMX_SetOption(c.handle, C.LMX_SETTINGS(option), ok))
-	case OptLicensePath, OptCustomShareString, OptLicenseString, OptServersideRequestString,
-		OptCustomUsername, OptCustomHostname, OptReservationToken, OptBindAddress:
-		var p unsafe.Pointer
-		if value != nil {
-			if value, ok := value.(string); !ok {
-				return ErrInvalidParameter
-			} else {
-				p = unsafe.Pointer(C.CString(value))
-			}
-		}
-		s = Status(C.LMX_SetOption(c.handle, C.LMX_SETTINGS(option), p))
-		if p != nil {
-			C.free(p)
-		}
-	case OptTrialDays, OptTrialUses, OptAutomaticHeartbeatAttempts, OptAutomaticHeartbeatInterval,
-		OptLicenseIdle, OptHostIDCacheCleanupInterval:
-		var val C.int
-		if value != nil {
-			if value, ok := value.(int); ok {
-				val = C.int(value)
-			} else {
-				return ErrInvalidParameter
-			}
-		}
-		s = Status(C.LMX_SetOption(c.handle, C.LMX_SETTINGS(option), unsafe.Pointer(C.IntToPtr(val))))
-	case OptHostIDEnabled, OptHostIDDisabled:
-		var val C.int
-		if value != nil {
-			if value, ok := value.(HostIDType); ok {
-				val = C.int(value)
-			} else {
-				return ErrInvalidParameter
-			}
-		}
-		s = Status(C.LMX_SetOption(c.handle, C.LMX_SETTINGS(option), unsafe.Pointer(C.IntToPtr(val))))
-	case OptCustomHostIDFunction:
-		return ErrNotImplemented
-	case OptHostIDCompareFunction:
-		return ErrNotImplemented
-	case OptHeartbeatCheckoutFailureFunction:
-		return ErrNotImplemented
-	case OptHeartbeatCheckoutSuccessFunction:
-		return ErrNotImplemented
-	case OptRetryFeatureFunction:
-		return ErrNotImplemented
-	case OptHeartbeatConnectionLostFunction:
-		return ErrNotImplemented
-	case OptHeartbeatExitFunction:
-		return ErrNotImplemented
-	case OptHeartbeatCallbackVendordata:
-		return ErrNotImplemented
-	default:
-		return ErrInvalidParameter
-	}
-	return lookupError(s)
+	return LookupError(Status(
+		C.LMX_Checkin(c.handle, cfeature, C.int(count))))
 }
 
 // GetErrorMessage TODO(rjeczalik)
@@ -192,42 +111,45 @@ func (c *cgoClient) GetHostID(t HostIDType) ([]HostID, error) {
 	cids := C.AllocMaxHostID()
 	defer C.free(unsafe.Pointer(cids))
 	clen := C.int(0)
-	ids := make([]HostID, 0)
-
 	if s := Status(C.LMX_Hostid(c.handle, C.LMX_HOSTID_TYPE(t), cids, &clen)); s != StatSuccess {
-		return nil, lookupError(s)
+		return nil, LookupError(s)
 	}
 
-	for i := 0; i < int(clen); i++ {
-		ids = append(ids, HostID{})
-		ids[i].Type = HostIDType(C.IterHostID(cids, C.int(i)).eHostidType)
-		ids[i].Value = C.GoString(&C.IterHostID(cids, C.int(i)).szValue[0])
-		ids[i].Desc = C.GoString(&C.IterHostID(cids, C.int(i)).szDescription[0])
-	}
-
-	return ids, nil
+	return goHostId(cids, int(clen)), nil
 }
 
 // GetHostIDSimple TODO(rjeczalik)
 func (c *cgoClient) GetHostIDSimple(t HostIDType) (string, error) {
 	cids := C.AllocLongString()
 	defer C.free(unsafe.Pointer(cids))
-
 	if s := Status(C.LMX_HostidSimple(c.handle, C.LMX_HOSTID_TYPE(t), cids)); s != StatSuccess {
-		return "", lookupError(s)
+		return "", LookupError(s)
 	}
 
 	return C.GoString(cids), nil
 }
 
-// GetFeatureInfo TODO(rjeczalik)
-func (c *cgoClient) GetFeatureInfo(feature string) ([]FeatureInfo, error) {
-	return nil, ErrNotImplemented
-}
-
 // GetLicenseInfo TODO(rjeczalik)
 func (c *cgoClient) GetLicenseInfo() ([]LicenseInfo, error) {
-	return nil, ErrNotImplemented
+	var cLicInfo *C.LMX_LICENSE_INFO
+	if s := Status(C.LMX_GetLicenseInfo(c.handle, &cLicInfo)); s != StatSuccess {
+		return nil, LookupError(s)
+	}
+
+	return goLicenseInfo(cLicInfo), nil
+}
+
+// GetFeatureInfo TODO(rjeczalik)
+func (c *cgoClient) GetFeatureInfo(feature string) ([]FeatureInfo, error) {
+	cfi := C.AllocFeatureInfo()
+	defer C.free(unsafe.Pointer(cfi))
+	cfeature := C.CString(feature)
+	defer C.free(unsafe.Pointer(cfeature))
+	if s := Status(C.LMX_GetFeatureInfo(c.handle, cfeature, cfi)); s != StatSuccess {
+		return nil, LookupError(s)
+	}
+
+	return goFeatureInfo(cfi), nil
 }
 
 // Heartbeat TODO(rjeczalik)
@@ -235,9 +157,7 @@ func (c *cgoClient) Heartbeat(feature string) error {
 	cfeature := C.CString(feature)
 	defer C.free(unsafe.Pointer(cfeature))
 
-	s := Status(C.LMX_Heartbeat(c.handle, cfeature))
-
-	return lookupError(s)
+	return LookupError(Status(C.LMX_Heartbeat(c.handle, cfeature)))
 }
 
 // GetExpireTime TODO(rjeczalik)
@@ -246,16 +166,15 @@ func (c *cgoClient) GetExpireTime(feature string) (t time.Duration, err error) {
 	defer C.free(unsafe.Pointer(cfeature))
 
 	ret := time.Duration(C.LMX_GetExpireTime(c.handle, cfeature))
-
 	switch {
 	case ret >= 0:
 		t = time.Hour * ret
 	case ret == -1:
-		err = ErrTooLateDate
+		err = LookupError(StatTooLateDate)
 	case ret == -2:
 		err = ErrDoesNotExpire
 	case ret < -2:
-		err = ErrUnknownFailure
+		err = LookupError(StatUnknownFailure)
 	}
 
 	return
@@ -269,17 +188,15 @@ func (c *cgoClient) ServerLog(feature, message string) error {
 		C.free(unsafe.Pointer(cmessage))
 	}()
 
-	s := Status(C.LMX_ServerLog(c.handle, cfeature, cmessage))
-
-	return lookupError(s)
+	return LookupError(Status(
+		C.LMX_ServerLog(c.handle, cfeature, cmessage)))
 }
 
 // ServerFunction TODO(rjeczalik)
 func (c *cgoClient) ServerFunction(feature, message string) (string, error) {
 	if len(message) >= int(C.LMX_MAX_LONG_STRING_LENGTH) {
-		return "", ErrInvalidParameter
+		return "", LookupError(StatInvalidParameter)
 	}
-
 	cfeature, cmessage := C.CString(feature), C.CString(message)
 	cresponse := C.AllocLongString()
 	defer func() {
@@ -287,11 +204,10 @@ func (c *cgoClient) ServerFunction(feature, message string) (string, error) {
 		C.free(unsafe.Pointer(cmessage))
 		C.free(unsafe.Pointer(cresponse))
 	}()
-
 	C.strcpy(cresponse, cmessage)
 
 	if s := Status(C.LMX_ServerFunction(c.handle, cfeature, cresponse)); s != StatSuccess {
-		return "", lookupError(s)
+		return "", LookupError(s)
 	}
 
 	return C.GoString(cresponse), nil
@@ -305,9 +221,8 @@ func (c *cgoClient) ClientStoreSave(filename, content string) error {
 		C.free(unsafe.Pointer(ccontent))
 	}()
 
-	s := Status(C.LMX_ClientStoreSave(c.handle, cfilename, ccontent))
-
-	return lookupError(s)
+	return LookupError(Status(
+		C.LMX_ClientStoreSave(c.handle, cfilename, ccontent)))
 }
 
 // ClientStoreLoad TODO(rjeczalik)
@@ -319,7 +234,7 @@ func (c *cgoClient) ClientStoreLoad(filename string) (string, error) {
 	}()
 
 	if s := Status(C.LMX_ClientStoreLoad(c.handle, cfilename, ccontent)); s != StatSuccess {
-		return "", lookupError(s)
+		return "", LookupError(s)
 	}
 
 	return C.GoString(ccontent), nil

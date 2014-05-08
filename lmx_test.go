@@ -2,15 +2,16 @@ package lmx_test
 
 import (
 	"math/rand"
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
 	"x-formation/lmx"
 )
 
-type Random struct {
-	rand.Source
-}
+type Random struct{ rand.Source }
 
 var DefaultRandom = &Random{rand.NewSource(time.Now().Unix())}
 
@@ -24,85 +25,10 @@ func (r *Random) String(length int) string {
 
 func TestLmx(t *testing.T) {
 	c, err := lmx.NewClient()
-	defer c.Close()
 	if err != nil {
-		t.Errorf(`expected err to be nil, got "%v" (%v) instead`, err, c.GetErrorMessage())
+		t.Errorf(`expected err==nil, got "%v"`, err)
 	}
-}
-
-func OptionTableTest(t *testing.T, c lmx.Client, options []lmx.OptionType, values []interface{}) {
-	for _, opt := range options {
-		for _, val := range values {
-			if err := c.SetOption(opt, val); err != nil {
-				t.Errorf(`expected err to be nil, got "%v" (%v:%v) instead`, err, opt, val)
-			}
-		}
-	}
-}
-
-func TestSetOptionParameterHandling(t *testing.T) {
-	c, err := lmx.NewClient()
 	defer c.Close()
-	if err != nil {
-		t.Fatalf(`expected err to be nil, got "%v" (%v) instead`, err, c.GetErrorMessage())
-	}
-	boolOpts := []lmx.OptionType{
-		lmx.OptExactVersion,
-		lmx.OptAllowBorrow,
-		lmx.OptAllowGrace,
-		lmx.OptTrialVirtualMachine,
-		lmx.OptTrialTerminalServer,
-		lmx.OptBlacklist,
-		lmx.OptAllowMultipleServers,
-		lmx.OptClientHostIDToServer,
-	}
-	boolVals := []interface{}{0, 1, true, false, nil}
-	intOpts := []lmx.OptionType{
-		lmx.OptTrialDays,
-		// LMX-2285
-		// lmx.OptTrialUses,
-		// lmx.OptAutomaticHeartbeatInterval,
-		lmx.OptAutomaticHeartbeatAttempts,
-		lmx.OptLicenseIdle,
-		lmx.OptHostIDCacheCleanupInterval,
-	}
-	intVals := []interface{}{30, 60, nil}
-	stringOpts := []lmx.OptionType{
-		lmx.OptLicensePath,
-		lmx.OptLicenseString,
-		lmx.OptCustomShareString,
-		lmx.OptServersideRequestString,
-		// LMX-2285
-		// lmx.OptCustomUsername,
-		// lmx.OptCustomHostname,
-		lmx.OptReservationToken,
-		lmx.OptBindAddress,
-	}
-	stringVals := []interface{}{"feature", "", nil}
-	hostIDOpts := []lmx.OptionType{
-		lmx.OptHostIDEnabled,
-		lmx.OptHostIDDisabled,
-	}
-	hostIDVals := []interface{}{
-		lmx.HostIDEthernet,
-		lmx.HostIDUsername,
-		lmx.HostIDHostname,
-		lmx.HostIDIPAddress,
-		lmx.HostIDCustom,
-		lmx.HostIDDongleHaspHL,
-		lmx.HostIDHardDisk,
-		lmx.HostIDLong,
-		lmx.HostIDBios,
-		lmx.HostIDWinProduct,
-		lmx.HostIDAWSInstance,
-		lmx.HostIDUnknown,
-		lmx.HostIDAll,
-	}
-
-	OptionTableTest(t, c, boolOpts, boolVals)
-	OptionTableTest(t, c, intOpts, intVals)
-	OptionTableTest(t, c, stringOpts, stringVals)
-	OptionTableTest(t, c, hostIDOpts, hostIDVals)
 }
 
 func TestGetHostID(t *testing.T) {
@@ -120,13 +46,13 @@ func TestGetHostID(t *testing.T) {
 
 	}
 	c, err := lmx.NewClient()
-	defer c.Close()
 	if err != nil {
-		t.Fatalf(`expected err to be nil, got "%v" (%v) instead`, err, c.GetErrorMessage())
+		t.Fatalf(`expected err==nil, got "%v"`, err)
 	}
+	defer c.Close()
 	hostID, err := c.GetHostID(lmx.HostIDAll)
 	if err != nil {
-		t.Fatal(`expected err to be nil, got "%v" instead`, err)
+		t.Fatal(`expected err==nil, got "%v"`, err)
 	}
 	if len(hostID) == 0 {
 		t.Fatal("expected hostID to be non-empty")
@@ -134,14 +60,14 @@ func TestGetHostID(t *testing.T) {
 	for _, ID := range hostID {
 		hostID, err := c.GetHostID(ID.Type)
 		if err != nil {
-			t.Fatal(`expected err to be nil, got "%v" instead`, err)
+			t.Fatal(`expected err==nil, got "%v"`, err)
 		}
 		checkHostID(t, &ID)
 		found := false
 		for _, ID2 := range hostID {
 			checkHostID(t, &ID2)
 			if ID2.Type != ID.Type {
-				t.Error(`expected "%v" to be equal to "%v"`, ID2.Type, ID.Type)
+				t.Error(`expected "%v"=="%v"`, ID2.Type, ID.Type)
 			}
 			if ID2 == ID {
 				found = true
@@ -155,25 +81,94 @@ func TestGetHostID(t *testing.T) {
 
 func TestGetHostIDSimple(t *testing.T) {
 	c, err := lmx.NewClient()
-	defer c.Close()
 	if err != nil {
-		t.Fatalf(`expected err to be nil, got "%v" (%v) instead`, c.GetErrorMessage())
+		t.Fatalf(`expected err==nil, got "%v"`, err)
 	}
+	defer c.Close()
 	hostID, err := c.GetHostIDSimple(lmx.HostIDAll)
 	if err != nil {
-		t.Fatal(`expected err to be nil, got "%v" instead`, err)
+		t.Fatal(`expected err==nil, got "%v"`, err)
 	}
 	if len(hostID) == 0 {
 		t.Fatal("expected hostID to be non-empty")
 	}
 }
 
+func TestCheckout(t *testing.T) {
+	c, err := lmx.NewClient()
+	if err != nil {
+		t.Fatalf(`expected err==nil, got "%v"`, err)
+	}
+	defer c.Close()
+	err = c.SetOption(lmx.OptLicensePath, filepath.Join(
+		os.Getenv("LMXROOT"), "examples", "licenses", "nodelocked.lic"))
+	if err != nil {
+		t.Fatalf(`expected err==nil, got "%v"`, err)
+	}
+	if err = c.Checkout("f2", 2, 0, 1); err != lmx.LookupError(lmx.StatBadVersion) {
+		t.Errorf(`expected err=='%v', got '%v'`,
+			lmx.LookupError(lmx.StatBadVersion), err)
+	}
+	if err = c.Checkout("f2", 1, 0, 1); err != nil {
+		t.Fatalf(`expected err==nil, got "%v"`, err)
+	}
+}
+
+func TestNodelockedFeatureInfo(t *testing.T) {
+	c, err := lmx.NewClient()
+	if err != nil {
+		t.Fatalf(`expected err==nil, got "%v"`, err)
+	}
+	defer c.Close()
+	err = c.SetOption(lmx.OptLicensePath, filepath.Join(
+		os.Getenv("LMXROOT"), "examples", "licenses", "nodelocked.lic"))
+	if err != nil {
+		t.Fatalf(`expected err==nil, got "%v"`, err)
+	}
+	if err = c.Checkout("f2", 1, 0, 1); err != nil {
+		t.Fatalf(`expected err==nil, got "%v"`, err)
+	}
+	fi, err := c.GetFeatureInfo("f2")
+	if err != nil {
+		t.Fatalf(`expected err==nil, got "%v"`, err)
+	}
+	if len(fi) != 1 {
+		t.Fatalf(`expected len(feature info)==1, got "%d"`, len(fi))
+	}
+	if fi[0].Name != "f2" {
+		t.Errorf(`expected feature .Name=="f2", got "%s"`, fi[0].Name)
+	}
+	if fi[0].Vendor != "XFORMATION" {
+		t.Errorf(`expected feature .Vendor=="XFORMATION", got "%s"`, fi[0].Vendor)
+	}
+	comment := "Put additional sub-licensing rules here"
+	if !strings.Contains(fi[0].Comment, comment) {
+		t.Errorf(`expected feature .Comment=="%s", got "%s"`, comment, fi[0].Comment)
+	}
+	if fi[0].Version.Major != 1 || fi[0].Version.Minor != 5 {
+		t.Errorf(`expected feature .Version=={1,5}, got "{%d,%d}"`,
+			fi[0].Version.Major, fi[0].Version.Minor)
+	}
+	expTime := time.Date(2018, time.January, 1, 0, 0, 0, 0, time.UTC)
+	if fi[0].Expiration.End != expTime {
+		t.Errorf(`expected feature .Expiration.End=="%v", got "%v"`,
+			fi[0].Expiration.End, expTime)
+	}
+	expTime = time.Date(2018, time.January, 1, 23, 59, 0, 0, time.UTC)
+	if fi[0].Expire != expTime {
+		t.Errorf(`expected feature .Expire=="%v", got "%v"`, fi[0].Expire, expTime)
+	}
+	if len(fi[0].Share) != 1 || fi[0].Share[0] != lmx.ShareVirtual {
+		t.Errorf(`expected feature .Share==ShareVirtual, got "%v"`, fi[0].Share)
+	}
+}
+
 func BenchmarkClientStore(b *testing.B) {
 	c, err := lmx.NewClient()
-	defer c.Close()
 	if err != nil {
-		b.Fatalf(`expected err to be nil, got "%v" (%v) instead`, err, c.GetErrorMessage())
+		b.Fatalf(`expected err==nil, got "%v"`, err)
 	}
+	defer c.Close()
 	for i := 0; i < b.N; i++ {
 		filename, content := "benchmark_"+DefaultRandom.String(32), DefaultRandom.String(512)
 		b.SetBytes(2 * int64(len(content)))
@@ -183,13 +178,13 @@ func BenchmarkClientStore(b *testing.B) {
 		if readContent, err := c.ClientStoreLoad(filename); err != nil {
 			b.Fatalf(`ClientStoreSave failed reading "%v"`, []byte(filename))
 		} else if readContent != content {
-			b.Fatalf(`expected read data to be "%v", got "%v" instead`, []byte(readContent), []byte(content))
+			b.Fatalf(`expected read data to be "%v", got "%v"`, []byte(readContent), []byte(content))
 		}
 		if err := c.ClientStoreSave(filename, ""); err != nil {
-			b.Fatal(`expected err to be nil, got "%v" instead`, err)
+			b.Fatal(`expected err==nil, got "%v"`, err)
 		}
-		if _, err := c.ClientStoreLoad(filename); err != lmx.ErrFileReadFailure {
-			b.Fatal(`expected err to be ErrFileReadFailure, got "%v" instead`, err)
+		if _, err := c.ClientStoreLoad(filename); err != lmx.LookupError(lmx.StatFileReadFailure) {
+			b.Fatal(`expected err==ErrFileReadFailure, got "%v"`, err)
 		}
 	}
 }
