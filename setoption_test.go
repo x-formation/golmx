@@ -3,7 +3,7 @@ package lmx_test
 import (
 	"testing"
 
-	"github.com/x-formation/golmx"
+	"git.int.x-formation.com/scm/dev/golmx.git"
 )
 
 type setOptTest struct {
