@@ -101,11 +101,6 @@ lmx-env() {
     echo "! unable to find your xmllicgen executable (needed for testing only)"
   }
 
-  [ ! -d "${TOP}/src/x-formation/lmx" ] && {
-    mkdir -p "${TOP}"/src/x-formation
-    ( cd "${TOP}"/src/x-formation; ln -sf ../../ lmx )
-  }
-
   export C_INCLUDE_PATH LIBRARY_PATH GOPATH PATH
 }
 

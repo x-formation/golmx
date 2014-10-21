@@ -3,7 +3,7 @@ package lmx_test
 import (
 	"testing"
 
-	"x-formation/lmx"
+	"github.com/x-formation/golmx"
 )
 
 type setOptTest struct {
@@ -103,9 +103,8 @@ func TestSetOptionValue(t *testing.T) {
 func optionTableTest(t *testing.T, c lmx.Client, tests []setOptTest) {
 	for i, soTest := range tests {
 		for _, val := range soTest.Val {
-			if err := c.SetOption(soTest.Opt, val); err != lmx.LookupError(soTest.Stat) {
-				t.Errorf(`expected err to be "%v", got "%v" (test nr: %d val: %#v) instead`,
-					lmx.LookupError(soTest.Stat), err, i, val)
+			if got, want := c.SetOption(soTest.Opt, val), lmx.LookupError(soTest.Stat); got != want {
+				t.Errorf(`want "%v"; got "%v" (i=%d, val=%#v)`, want, got, i, val)
 			}
 		}
 	}
