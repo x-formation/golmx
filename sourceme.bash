@@ -20,7 +20,7 @@ lmx-env() {
   local LMX_LIB_PATH=
   local SEARCH_PATH=()
 
-  [ -z "${LMXROOT}" ] && {
+  [ -z "${LMXSDK_PATH}" ] && {
     SEARCH_PATH=(
       /usr
       /opt
@@ -37,7 +37,7 @@ lmx-env() {
     }
   } || {
     SEARCH_PATH=(
-      "${LMXROOT}"
+      "${LMXSDK_PATH}"
     )
   }
 
@@ -62,7 +62,7 @@ lmx-env() {
 
   die_missing() {
     echo "error: unable to find ${1}"
-    echo "error: consider exporting LMXROOT pointing to your LM-X SDK"
+    echo "error: consider exporting LMXSDK_PATH pointing to your LM-X SDK"
     return 1
   }
 
@@ -96,7 +96,7 @@ lmx-env() {
   echo "# added \"${LMX_INC_PATH}\" to your C_INCLUDE_PATH env"
   echo "# added \"${LMX_LIB_PATH}\" to your LIBRARY_PATH env"
   test ! -z "${XMLLICGEN_PATH}" && {
-    echo "# added \"${XMLLICGEN_PATH}\" to your PATH env" 
+    echo "# added \"${XMLLICGEN_PATH}\" to your PATH env"
   } || {
     echo "! unable to find your xmllicgen executable (needed for testing only)"
   }
