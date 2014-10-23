@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"x-formation/lmx"
+	"git.int.x-formation.com/scm/dev/golmx.git"
 )
 
 type Random struct{ rand.Source }

@@ -1,6 +1,7 @@
 package lmx
 
 // #include <lmx.h>
+// #cgo pkg-config: liblmxclient
 import "C"
 
 const Version = int(C.LMX_VERSION)

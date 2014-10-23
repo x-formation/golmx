@@ -3,16 +3,20 @@ package lmx
 /*
 #include <string.h>
 #include <lmx.h>
-#cgo linux freebsd LDFLAGS: -llmxclient -ldl
+
 LMX_HOSTID* AllocMaxHostID() {
 	return (LMX_HOSTID*)(malloc(LMX_MAX_HOSTIDS * sizeof(LMX_HOSTID)));
 }
+
 char* AllocLongString() {
 	return (char*)(malloc(LMX_MAX_LONG_STRING_LENGTH * sizeof(char)));
 }
+
 LMX_FEATURE_INFO* AllocFeatureInfo() {
 	return (LMX_FEATURE_INFO*)(malloc(sizeof(LMX_FEATURE_INFO)));
 }
+
+#cgo pkg-config: liblmxclient
 */
 import "C"
 
