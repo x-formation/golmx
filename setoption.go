@@ -2,15 +2,49 @@ package lmx
 
 /*
 #include <lmx.h>
-void* IntToPtr(int i) {
-	return (void*)(uintptr_t)(i);
-}
+#include <stdio.h>
+#include <unistd.h>
+
+void* IntToPtr(int i);
+
+// The gateway functions
+void HeartbeatConnectionLost_cgo(void *pVendorData, const char *szHost, int nPort, int nFailedHeartbeats);
+void HeartbeatCheckoutFailure_cgo(void *pVendorData, const char *szFeatureName, int nUsedLicCount);
+void HeartbeatCheckoutSuccess_cgo(void *pVendorData, const char *szFeatureName, int nUsedLicCount);
+void HeartbeatRetryFeature_cgo(void *pVendorData, const char *szFeatureName, int nUsedLicCount);
+void HeartbeatExit_cgo(void *pVendorData);
 */
 import "C"
 
 import (
+	"fmt"
 	"unsafe"
 )
+
+//export HeartbeatConnectionLostGo
+func HeartbeatConnectionLostGo(pVendorData unsafe.Pointer, szHost *C.char, nPort int, nFailedHeartbeats int) {
+	cb.heartbeatConnectionLost(cb.vendordata, C.GoString(szHost), nPort, nFailedHeartbeats)
+}
+
+//export HeartbeatCheckoutFailureGo
+func HeartbeatCheckoutFailureGo(pVendorData unsafe.Pointer, szFeatureName *C.char, nUsedLicCount int, LmxStat Status) {
+	cb.heartbeatCheckoutFailure(cb.vendordata, C.GoString(szFeatureName), nUsedLicCount, LmxStat)
+}
+
+//export HeartbeatCheckoutSuccessGo
+func HeartbeatCheckoutSuccessGo(pVendorData unsafe.Pointer, szFeatureName *C.char, nUsedLicCount int) {
+	cb.heartbeatCheckoutSuccess(cb.vendordata, C.GoString(szFeatureName), nUsedLicCount)
+}
+
+//export HeartbeatRetryFeatureGo
+func HeartbeatRetryFeatureGo(pVendorData unsafe.Pointer, szFeatureName *C.char, nUsedLicCount int) {
+	cb.heartbeatRetryFeature(cb.vendordata, C.GoString(szFeatureName), nUsedLicCount)
+}
+
+//export HeartbeatExitGo
+func HeartbeatExitGo(pVendorData unsafe.Pointer) {
+	cb.heartbeatExit(cb.vendordata)
+}
 
 // SetOption TODO(rjeczalik)
 func (c *cgoClient) SetOption(option OptionType, value interface{}) error {
@@ -53,17 +87,17 @@ func (c *cgoClient) SetOption(option OptionType, value interface{}) error {
 	case OptHostIDCompareFunction:
 		return LookupError(StatNotImplemented)
 	case OptHeartbeatCheckoutFailureFunction:
-		return LookupError(StatNotImplemented)
+		return LookupError(c.setHeartbeatCheckoutFailureFunction(option, value))
 	case OptHeartbeatCheckoutSuccessFunction:
-		return LookupError(StatNotImplemented)
-	case OptRetryFeatureFunction:
-		return LookupError(StatNotImplemented)
+		return LookupError(c.setHeartbeatCheckoutSuccessFunction(option, value))
+	case OptHeartbeatRetryFeatureFunction:
+		return LookupError(c.setHeartbeatRetryFeatureFunction(option, value))
 	case OptHeartbeatConnectionLostFunction:
-		return LookupError(StatNotImplemented)
+		return LookupError(c.setHeartbeatConnectionLostFunction(option, value))
 	case OptHeartbeatExitFunction:
-		return LookupError(StatNotImplemented)
+		return LookupError(c.setHeartbeatExitFunction(option, value))
 	case OptHeartbeatCallbackVendordata:
-		return LookupError(StatNotImplemented)
+		return LookupError(c.setHeartbeatCallbackVendordataFunction(option, value))
 	default:
 		return LookupError(StatInvalidParameter)
 	}
@@ -119,6 +153,57 @@ func (c *cgoClient) setHostIdTypeOpt(opt OptionType, val interface{}) Status {
 	if valHostID, ok := val.(HostIDType); ok {
 		return Status(C.LMX_SetOption(c.handle, C.LMX_SETTINGS(opt),
 			unsafe.Pointer(C.IntToPtr(C.int(valHostID)))))
+	}
+	return StatInvalidParameter
+}
+
+func (c *cgoClient) setHeartbeatConnectionLostFunction(opt OptionType, val interface{}) Status {
+	if callback, ok := val.(func(interface{}, string, int, int)); ok {
+		cb.heartbeatConnectionLost = callback
+		return Status(C.LMX_SetOption(c.handle, C.LMX_SETTINGS(opt),
+			unsafe.Pointer(C.HeartbeatConnectionLost_cgo)))
+	}
+	return StatInvalidParameter
+}
+
+func (c *cgoClient) setHeartbeatCheckoutFailureFunction(opt OptionType, val interface{}) Status {
+	if callback, ok := val.(func(interface{}, string, int, Status)); ok {
+		cb.heartbeatCheckoutFailure = callback
+		return Status(C.LMX_SetOption(c.handle, C.LMX_SETTINGS(opt), unsafe.Pointer(C.HeartbeatCheckoutFailure_cgo)))
+	}
+	return StatInvalidParameter
+}
+
+func (c *cgoClient) setHeartbeatCheckoutSuccessFunction(opt OptionType, val interface{}) Status {
+	if callback, ok := val.(func(interface{}, string, int)); ok {
+		cb.heartbeatCheckoutSuccess = callback
+		return Status(C.LMX_SetOption(c.handle, C.LMX_SETTINGS(opt), unsafe.Pointer(C.HeartbeatCheckoutSuccess_cgo)))
+	}
+	return StatInvalidParameter
+}
+
+func (c *cgoClient) setHeartbeatRetryFeatureFunction(opt OptionType, val interface{}) Status {
+	if callback, ok := val.(func(interface{}, string, int)); ok {
+		cb.heartbeatRetryFeature = callback
+		return Status(C.LMX_SetOption(c.handle, C.LMX_SETTINGS(opt),
+			unsafe.Pointer(C.HeartbeatRetryFeature_cgo)))
+	}
+	return StatInvalidParameter
+}
+
+func (c *cgoClient) setHeartbeatExitFunction(opt OptionType, val interface{}) Status {
+	if callback, ok := val.(func(interface{})); ok {
+		cb.heartbeatExit = callback
+		return Status(C.LMX_SetOption(c.handle, C.LMX_SETTINGS(opt),
+			unsafe.Pointer(C.HeartbeatExit_cgo)))
+	}
+	return StatInvalidParameter
+}
+
+func (c *cgoClient) setHeartbeatCallbackVendordataFunction(opt OptionType, val interface{}) Status {
+	if vdata, ok := val.(interface{}); ok {
+		cb.vendordata = vdata
+		return StatSuccess
 	}
 	return StatInvalidParameter
 }

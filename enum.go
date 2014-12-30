@@ -84,7 +84,7 @@ const (
 	OptHostIDCompareFunction            = OptionType(C.LMX_OPT_HOSTID_COMPARE_FUNCTION)
 	OptHeartbeatCheckoutFailureFunction = OptionType(C.LMX_OPT_HEARTBEAT_CHECKOUT_FAILURE_FUNCTION)
 	OptHeartbeatCheckoutSuccessFunction = OptionType(C.LMX_OPT_HEARTBEAT_CHECKOUT_SUCCESS_FUNCTION)
-	OptRetryFeatureFunction             = OptionType(C.LMX_OPT_HEARTBEAT_RETRY_FEATURE_FUNCTION)
+	OptHeartbeatRetryFeatureFunction    = OptionType(C.LMX_OPT_HEARTBEAT_RETRY_FEATURE_FUNCTION)
 	OptHeartbeatConnectionLostFunction  = OptionType(C.LMX_OPT_HEARTBEAT_CONNECTION_LOST_FUNCTION)
 	OptHeartbeatExitFunction            = OptionType(C.LMX_OPT_HEARTBEAT_EXIT_FUNCTION)
 	OptHeartbeatCallbackVendordata      = OptionType(C.LMX_OPT_HEARTBEAT_CALLBACK_VENDORDATA)
