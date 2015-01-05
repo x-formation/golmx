@@ -17,28 +17,28 @@ void HeartbeatExit_cgo(void *pVendorData);
 import "C"
 
 import (
-	"fmt"
 	"unsafe"
 )
 
 //export HeartbeatConnectionLostGo
 func HeartbeatConnectionLostGo(pVendorData unsafe.Pointer, szHost *C.char, nPort int, nFailedHeartbeats int) {
-	cb.heartbeatConnectionLost(cb.vendordata, C.GoString(szHost), nPort, nFailedHeartbeats)
+	cb.heartbeatConnectionLost(cb.vendordata, C.GoString(szHost), int(nPort),int(nFailedHeartbeats))
 }
 
 //export HeartbeatCheckoutFailureGo
 func HeartbeatCheckoutFailureGo(pVendorData unsafe.Pointer, szFeatureName *C.char, nUsedLicCount int, LmxStat Status) {
-	cb.heartbeatCheckoutFailure(cb.vendordata, C.GoString(szFeatureName), nUsedLicCount, LmxStat)
+	cb.heartbeatCheckoutFailure(cb.vendordata, C.GoString(szFeatureName), int(nUsedLicCount),
+        LmxStat)
 }
 
 //export HeartbeatCheckoutSuccessGo
 func HeartbeatCheckoutSuccessGo(pVendorData unsafe.Pointer, szFeatureName *C.char, nUsedLicCount int) {
-	cb.heartbeatCheckoutSuccess(cb.vendordata, C.GoString(szFeatureName), nUsedLicCount)
+	cb.heartbeatCheckoutSuccess(cb.vendordata, C.GoString(szFeatureName), int(nUsedLicCount))
 }
 
 //export HeartbeatRetryFeatureGo
 func HeartbeatRetryFeatureGo(pVendorData unsafe.Pointer, szFeatureName *C.char, nUsedLicCount int) {
-	cb.heartbeatRetryFeature(cb.vendordata, C.GoString(szFeatureName), nUsedLicCount)
+	cb.heartbeatRetryFeature(cb.vendordata, C.GoString(szFeatureName), int(nUsedLicCount))
 }
 
 //export HeartbeatExitGo
