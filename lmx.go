@@ -1,26 +1,24 @@
 package lmx
 
-/*
-#include <string.h>
-#include <lmx.h>
-
-LMX_HOSTID* AllocMaxHostID() {
-	return (LMX_HOSTID*)(malloc(LMX_MAX_HOSTIDS * sizeof(LMX_HOSTID)));
-}
-
-char* AllocLongString() {
-	return (char*)(malloc(LMX_MAX_LONG_STRING_LENGTH * sizeof(char)));
-}
-
-LMX_FEATURE_INFO* AllocFeatureInfo() {
-	return (LMX_FEATURE_INFO*)(malloc(sizeof(LMX_FEATURE_INFO)));
-}
-
-#cgo pkg-config: liblmxclient
-*/
+// #include <string.h>
+// #include <lmx.h>
+//
+// LMX_HOSTID* AllocMaxHostID() {
+//   return (LMX_HOSTID*)(malloc(LMX_MAX_HOSTIDS * sizeof(LMX_HOSTID)));
+// }
+//
+// char* AllocLongString() {
+//   return (char*)(malloc(LMX_MAX_LONG_STRING_LENGTH * sizeof(char)));
+// }
+//
+// LMX_FEATURE_INFO* AllocFeatureInfo() {
+//   return (LMX_FEATURE_INFO*)(malloc(sizeof(LMX_FEATURE_INFO)));
+// }
+// #cgo pkg-config: liblmxclient
 import "C"
 
 import (
+	"sync"
 	"time"
 	"unsafe"
 )
@@ -46,9 +44,12 @@ type Client interface {
 	ClientStoreLoad(filename string) (string, error)
 }
 
-// CgoClient
+// cgoClient
 type cgoClient struct {
-	handle C.LMX_HANDLE
+	m         sync.Mutex // protects callbacks
+	callbacks map[OptionType]HeartbeatFunc
+	vendor    interface{}
+	handle    C.LMX_HANDLE
 }
 
 // NewClient TODO(rjeczalik)
@@ -118,7 +119,6 @@ func (c *cgoClient) GetHostID(t HostIDType) ([]HostID, error) {
 	if s := Status(C.LMX_Hostid(c.handle, C.LMX_HOSTID_TYPE(t), cids, &clen)); s != StatSuccess {
 		return nil, LookupError(s)
 	}
-
 	return goHostId(cids, int(clen)), nil
 }
 
@@ -129,7 +129,6 @@ func (c *cgoClient) GetHostIDSimple(t HostIDType) (string, error) {
 	if s := Status(C.LMX_HostidSimple(c.handle, C.LMX_HOSTID_TYPE(t), cids)); s != StatSuccess {
 		return "", LookupError(s)
 	}
-
 	return C.GoString(cids), nil
 }
 
@@ -139,7 +138,6 @@ func (c *cgoClient) GetLicenseInfo() ([]LicenseInfo, error) {
 	if s := Status(C.LMX_GetLicenseInfo(c.handle, &cLicInfo)); s != StatSuccess {
 		return nil, LookupError(s)
 	}
-
 	return goLicenseInfo(cLicInfo), nil
 }
 
@@ -152,7 +150,6 @@ func (c *cgoClient) GetFeatureInfo(feature string) ([]FeatureInfo, error) {
 	if s := Status(C.LMX_GetFeatureInfo(c.handle, cfeature, cfi)); s != StatSuccess {
 		return nil, LookupError(s)
 	}
-
 	return goFeatureInfo(cfi), nil
 }
 
@@ -160,7 +157,6 @@ func (c *cgoClient) GetFeatureInfo(feature string) ([]FeatureInfo, error) {
 func (c *cgoClient) Heartbeat(feature string) error {
 	cfeature := C.CString(feature)
 	defer C.free(unsafe.Pointer(cfeature))
-
 	return LookupError(Status(C.LMX_Heartbeat(c.handle, cfeature)))
 }
 
@@ -180,7 +176,6 @@ func (c *cgoClient) GetExpireTime(feature string) (t time.Duration, err error) {
 	case ret < -2:
 		err = LookupError(StatUnknownFailure)
 	}
-
 	return
 }
 
@@ -191,7 +186,6 @@ func (c *cgoClient) ServerLog(feature, message string) error {
 		C.free(unsafe.Pointer(cfeature))
 		C.free(unsafe.Pointer(cmessage))
 	}()
-
 	return LookupError(Status(
 		C.LMX_ServerLog(c.handle, cfeature, cmessage)))
 }
@@ -209,11 +203,9 @@ func (c *cgoClient) ServerFunction(feature, message string) (string, error) {
 		C.free(unsafe.Pointer(cresponse))
 	}()
 	C.strcpy(cresponse, cmessage)
-
 	if s := Status(C.LMX_ServerFunction(c.handle, cfeature, cresponse)); s != StatSuccess {
 		return "", LookupError(s)
 	}
-
 	return C.GoString(cresponse), nil
 }
 
@@ -224,7 +216,6 @@ func (c *cgoClient) ClientStoreSave(filename, content string) error {
 		C.free(unsafe.Pointer(cfilename))
 		C.free(unsafe.Pointer(ccontent))
 	}()
-
 	return LookupError(Status(
 		C.LMX_ClientStoreSave(c.handle, cfilename, ccontent)))
 }
@@ -236,10 +227,8 @@ func (c *cgoClient) ClientStoreLoad(filename string) (string, error) {
 		C.free(unsafe.Pointer(cfilename))
 		C.free(unsafe.Pointer(ccontent))
 	}()
-
 	if s := Status(C.LMX_ClientStoreLoad(c.handle, cfilename, ccontent)); s != StatSuccess {
 		return "", LookupError(s)
 	}
-
 	return C.GoString(ccontent), nil
 }
