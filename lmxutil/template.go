@@ -1,10 +1,10 @@
+// +build ignore
+
 package lmxutil
 
 import (
 	"encoding/xml"
 	"io"
-
-	"x-formation/lmx"
 )
 
 type license struct {
