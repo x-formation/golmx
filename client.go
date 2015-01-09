@@ -2,6 +2,33 @@ package lmx
 
 import "time"
 
+// ToStatus TODO(rjeczalik)
+func ToStatus(err error) Status {
+	if err, ok := err.(*Error); ok {
+		return err.Status
+	}
+	return StatUnknownFailure
+}
+
+// ToError TODO(rjeczalik)
+func ToError(s Status) error {
+	if err, ok := statusErrorMap[s]; ok {
+		return err
+	}
+	return statusErrorMap[StatUnknownFailure]
+}
+
+// Error TODO(rjeczalik)
+type Error struct {
+	Status Status
+	Err    error
+}
+
+// Error implements builtin error interface.
+func (e *Error) Error() string {
+	return e.Err.Error()
+}
+
 // Heartbeat represents heartbeat context for callbacks.
 type Heartbeat struct {
 	// Type denotes the type of the heartbeat function called. It holds one of the

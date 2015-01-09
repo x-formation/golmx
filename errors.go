@@ -5,6 +5,12 @@ import "C"
 
 import "errors"
 
+// ErrDoesNotExpire TODO(rjeczalik)
+var ErrDoesNotExpire = errors.New("The feature does not expire.")
+
+// ErrNotInitialized TODO(rjeczalik)
+var ErrNotInitialized = errors.New("The LM-X client was not initialized.")
+
 // Status TODO(rjeczalik)
 type Status uint8
 
@@ -73,25 +79,6 @@ const (
 	StatLimit                    = Status(C.LMX_LIMIT)
 )
 
-var (
-	// ErrDoesNotExpire TODO(rjeczalik)
-	ErrDoesNotExpire = errors.New("The feature does not expire.")
-
-	// ErrNotInitialized TODO(rjeczalik)
-	ErrNotInitialized = errors.New("The LM-X client was not initialized.")
-)
-
-// Error TODO(rjeczalik)
-type Error struct {
-	Status Status
-	Err    error
-}
-
-// Error implements builtin error interface.
-func (e *Error) Error() string {
-	return e.Err.Error()
-}
-
 func newError(s Status) error {
 	return &Error{
 		Status: s,
@@ -157,20 +144,4 @@ var statusErrorMap = map[Status]error{
 	StatApiNotReentrant:          newError(StatApiNotReentrant),
 	StatLicenseUploadFailure:     newError(StatLicenseUploadFailure),
 	StatInternalLicNotEmbedded:   newError(StatInternalLicNotEmbedded),
-}
-
-// ToStatus TODO(rjeczalik)
-func ToStatus(err error) Status {
-	if err, ok := err.(*Error); ok {
-		return err.Status
-	}
-	return StatUnknownFailure
-}
-
-// ToError TODO(rjeczalik)
-func ToError(s Status) error {
-	if err, ok := statusErrorMap[s]; ok {
-		return err
-	}
-	return statusErrorMap[StatUnknownFailure]
 }
