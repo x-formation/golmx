@@ -1,6 +1,5 @@
 package lmx
 
-// #include <string.h>
 // #include <lmx.h>
 //
 // void goConnectionLost(void*, char*, int, int);
@@ -17,6 +16,8 @@ import (
 	"time"
 	"unsafe"
 )
+
+// TODO(rjeczalik): ~QuoteASCII every string
 
 //export goConnectionLost
 func goConnectionLost(p unsafe.Pointer, host *C.char, port C.int, n C.int) {
@@ -146,9 +147,9 @@ func (c *cgoClient) HostID(t HostIDType) ([]HostID, error) {
 }
 
 func (c *cgoClient) HostIDString(t HostIDType) (string, error) {
-	cids := (*C.char)(C.malloc(C.LMX_MAX_LONG_STRING_LENGTH))
+	backing := [C.LMX_MAX_LONG_STRING_LENGTH]C.char{}
+	cids := (*C.char)(unsafe.Pointer(&backing[0]))
 	s := Status(C.LMX_HostidSimple(c.handle, C.LMX_HOSTID_TYPE(t), cids))
-	C.free(unsafe.Pointer(cids))
 	if s != StatSuccess {
 		return "", ToError(s)
 	}
@@ -211,13 +212,13 @@ func (c *cgoClient) ServerFunction(feature, message string) (string, error) {
 		return "", ToError(StatInvalidParameter)
 	}
 	cfeature := C.CString(feature)
-	cmessage := C.CString(message)
-	cresponse := (*C.char)(C.malloc(C.LMX_MAX_LONG_STRING_LENGTH))
-	C.strcpy(cresponse, cmessage)
+	backing := [C.LMX_MAX_LONG_STRING_LENGTH]C.char{}
+	cresponse := (*C.char)(unsafe.Pointer(&backing[0]))
+	for i := 0; i < len(message); i++ {
+		backing[i] = C.char(message[i])
+	}
 	s := Status(C.LMX_ServerFunction(c.handle, cfeature, cresponse))
 	C.free(unsafe.Pointer(cfeature))
-	C.free(unsafe.Pointer(cmessage))
-	C.free(unsafe.Pointer(cresponse))
 	if s != StatSuccess {
 		return "", ToError(s)
 	}
@@ -235,10 +236,10 @@ func (c *cgoClient) ClientStoreSave(filename, content string) error {
 
 func (c *cgoClient) ClientStoreLoad(filename string) (string, error) {
 	cfilename := C.CString(filename)
-	ccontent := (*C.char)(C.malloc(C.LMX_MAX_LONG_STRING_LENGTH))
+	backing := [C.LMX_MAX_LONG_STRING_LENGTH]C.char{}
+	ccontent := (*C.char)(unsafe.Pointer(&backing[0]))
 	s := Status(C.LMX_ClientStoreLoad(c.handle, cfilename, ccontent))
 	C.free(unsafe.Pointer(cfilename))
-	C.free(unsafe.Pointer(ccontent))
 	if s != StatSuccess {
 		return "", ToError(s)
 	}

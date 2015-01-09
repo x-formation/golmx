@@ -1,14 +1,6 @@
 package lmx
 
-/*
-#include <lmx.h>
-LMX_HOSTID* IterHostID(LMX_HOSTID* h, int i) {
-	return &h[i];
-}
-int IterTimeZones(int* tz, int i) {
-	return tz[i];
-}
-*/
+// #include <lmx.h>
 import "C"
 
 import (
@@ -16,6 +8,7 @@ import (
 	"net"
 	"strings"
 	"time"
+	"unsafe"
 )
 
 func goLicenseInfo(CLi *C.LMX_LICENSE_INFO) []LicenseInfo {
@@ -200,21 +193,26 @@ func goDynamicReservation(CDr *C.LMX_DYNAMIC_RESERVATION) []DynamicReservation {
 		})
 }
 
-func goHostId(ptr *C.LMX_HOSTID, length int) (hIds []HostID) {
+const offhostid = unsafe.Sizeof(C.LMX_HOSTID{})
+
+func goHostId(p *C.LMX_HOSTID, length int) (hIds []HostID) {
 	hIds = make([]HostID, 0, length)
-	for i := 0; i < length; i++ {
+	for i := uintptr(0); i < uintptr(length); i++ {
+		hostid := (*C.LMX_HOSTID)(unsafe.Pointer(*(*uintptr)(unsafe.Pointer(&p)) + i*offhostid))
 		hIds = append(hIds, HostID{
-			Type:  HostIDType(C.IterHostID(ptr, C.int(i)).eHostidType),
-			Value: C.GoString(&C.IterHostID(ptr, C.int(i)).szValue[0]),
-			Desc:  C.GoString(&C.IterHostID(ptr, C.int(i)).szDescription[0]),
+			Type:  HostIDType(hostid.eHostidType),
+			Value: C.GoString(&hostid.szValue[0]),
+			Desc:  C.GoString(&hostid.szDescription[0]),
 		})
 	}
 	return
 }
 
-func goTimeZones(ptr *C.int, length int) (tz []int) {
-	for i := 0; i < length; i++ {
-		tz = append(tz, int(C.IterTimeZones(ptr, C.int(i))))
+const offint = unsafe.Sizeof(C.int(0))
+
+func goTimeZones(p *C.int, length int) (tz []int) {
+	for i := uintptr(0); i < uintptr(length); i++ {
+		tz = append(tz, int(*(*C.int)(unsafe.Pointer(*(*uintptr)(unsafe.Pointer(&p)) + i*offint))))
 	}
 	return
 }

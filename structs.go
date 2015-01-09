@@ -1,8 +1,5 @@
 package lmx
 
-// #include <lmx.h>
-import "C"
-
 import (
 	"net"
 	"time"
