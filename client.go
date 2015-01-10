@@ -45,28 +45,29 @@ type Heartbeat struct {
 
 	// Addr is license server's network addres of the form "host:port".
 	//
-	// It has non-zero value only when the Type is HeartbeatConnectionLost.
+	// It has non-zero value only when the Type is OptHeartbeatConnectionLost.
 	Addr string
 
 	// Features is the name of a feature that failed.
 	//
-	// It has non-zero value for all the callback types, except HeartbeatExit.
+	// It has non-zero value for all the callback types, except OptHeartbeatExit.
 	Feature string
 
 	// Err is the reason of failed checkout. It's underlying type is *Error.
 	//
-	// It has non-zero value only when the Type is HeartbeatCheckoutFailure.
+	// It has non-zero value only when the Type is OptHeartbeatCheckoutFailure.
 	Err error
 
 	// Failed tells how many heartbeats have failed prior to invoking the callback
 	// (basically it must be equal to the value of OptAutomaticHeartbeatAttempts).
 	//
-	// It has non-zero value only when the Type is HeartbeatConnectionLost.
+	// It has non-zero value only when the Type is OptHeartbeatConnectionLost.
 	Heartbeats int
 
 	// Licenses is the number of licenses.
 	//
-	// It has non-zero value only when the Type is one of HeartbeatCheckout* types.
+	// It has non-zero value only when the Type is either OptHeartbeatRetryFailure,
+	// OptHeartbeatCheckoutFailure or OptHeartbeatCheckoutSuccess.
 	Licenses int
 }
 

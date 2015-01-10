@@ -213,10 +213,10 @@ func (c *cgoClient) ServerFunction(feature, message string) (string, error) {
 	}
 	cfeature := C.CString(feature)
 	backing := [C.LMX_MAX_LONG_STRING_LENGTH]C.char{}
-	cresponse := (*C.char)(unsafe.Pointer(&backing[0]))
 	for i := 0; i < len(message); i++ {
 		backing[i] = C.char(message[i])
 	}
+	cresponse := (*C.char)(unsafe.Pointer(&backing[0]))
 	s := Status(C.LMX_ServerFunction(c.handle, cfeature, cresponse))
 	C.free(unsafe.Pointer(cfeature))
 	if s != StatSuccess {
@@ -247,32 +247,31 @@ func (c *cgoClient) ClientStoreLoad(filename string) (string, error) {
 }
 
 func (c *cgoClient) SetOption(option OptionType, value interface{}) error {
+	s := StatInvalidParameter
 	switch option {
 	case OptExactVersion, OptAllowBorrow, OptAllowGrace, OptTrialVirtualMachine,
 		OptTrialTerminalServer, OptBlacklist, OptLicenseIdle, OptAllowMultipleServers,
 		OptClientHostIDToServer, OptAllowCheckoutLessLicenses:
-		return ToError(c.setBooleanOpt(option, value))
+		s = c.setBooleanOpt(option, value)
 	case OptLicensePath, OptCustomShareString, OptLicenseString, OptServersideRequestString,
 		OptCustomUsername, OptCustomHostname, OptReservationToken, OptBindAddress:
-		return ToError(c.setStringOpt(option, value))
+		s = c.setStringOpt(option, value)
 	case OptTrialDays, OptTrialUses, OptAutomaticHeartbeatAttempts, OptAutomaticHeartbeatInterval,
 		OptHostIDCacheCleanupInterval:
-		return ToError(c.setIntegerOpt(option, value))
+		s = c.setIntegerOpt(option, value)
 	case OptHostIDEnabled, OptHostIDDisabled:
-		return ToError(c.setHostIdTypeOpt(option, value))
+		s = c.setHostIdTypeOpt(option, value)
 	case OptCustomHostIDFunction:
-		return ToError(StatNotImplemented)
+		s = StatNotImplemented
 	case OptHostIDCompareFunction:
-		return ToError(StatNotImplemented)
+		s = StatNotImplemented
 	case OptHeartbeatCheckoutFailure, OptHeartbeatCheckoutSuccess, OptHeartbeatRetryFeature,
 		OptHeartbeatConnectionLost, OptHeartbeatExit:
-		return ToError(c.setCallback(option, value))
+		s = c.setCallback(option, value)
 	case OptHeartbeatCallbackVendordata:
-		return ToError(c.setVendordata(option, value))
-	default:
-		return ToError(StatInvalidParameter)
+		s = c.setVendordata(value)
 	}
-	return ToError(StatInvalidParameter)
+	return ToError(s)
 }
 
 func (c *cgoClient) heartbeat(h *Heartbeat) {
@@ -291,9 +290,9 @@ func (c *cgoClient) heartbeat(h *Heartbeat) {
 }
 
 func (c *cgoClient) setCallback(opt OptionType, val interface{}) Status {
-	// Initialize heartbeat callbacks.It's effectively a nop if it's already
+	// Initialize heartbeat callbacks. It's effectively a nop if it's already
 	// been initialized.
-	if s := c.setCallback(OptHeartbeatCallbackVendordata, c.vendor); s != StatSuccess {
+	if s := c.setVendordata(c.vendor); s != StatSuccess {
 		return s
 	}
 	if val == nil {
@@ -304,6 +303,7 @@ func (c *cgoClient) setCallback(opt OptionType, val interface{}) Status {
 		c.m.Lock()
 		delete(c.callbacks, opt)
 		c.m.Unlock()
+		return StatSuccess
 	}
 	if fn, ok := val.(HeartbeatFunc); ok {
 		c.m.Lock()
@@ -320,11 +320,12 @@ func (c *cgoClient) setCallback(opt OptionType, val interface{}) Status {
 	return StatInvalidParameter
 }
 
-func (c *cgoClient) setVendordata(opt OptionType, val interface{}) Status {
+func (c *cgoClient) setVendordata(val interface{}) Status {
+	const opt = C.LMX_SETTINGS(OptHeartbeatCallbackVendordata)
 	c.m.Lock()
 	defer c.m.Unlock()
 	if c.callbacks == nil {
-		s := Status(C.LMX_SetOption(c.handle, C.LMX_SETTINGS(opt), unsafe.Pointer(c)))
+		s := Status(C.LMX_SetOption(c.handle, opt, unsafe.Pointer(c)))
 		if s != StatSuccess {
 			return s
 		}
