@@ -103,6 +103,7 @@ func (c *cgoClient) Close() error {
 		return ErrNotInitialized
 	}
 	C.LMX_Free(c.handle)
+	c.handle = nil
 	return nil
 }
 
