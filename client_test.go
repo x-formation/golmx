@@ -105,9 +105,8 @@ func TestCheckout(t *testing.T) {
 	if err != nil {
 		t.Fatalf(`expected err==nil, got "%v"`, err)
 	}
-	if err = c.Checkout("f2", 2, 0, 1); err != lmx.ToError(lmx.StatBadVersion) {
-		t.Errorf(`expected err=='%v', got '%v'`,
-			lmx.ToError(lmx.StatBadVersion), err)
+	if err = c.Checkout("f2", 2, 0, 1); err != lmx.ErrBadVersion {
+		t.Errorf(`expected err=='%v', got '%v'`, lmx.ErrBadVersion, err)
 	}
 	if err = c.Checkout("f2", 1, 0, 1); err != nil {
 		t.Fatalf(`expected err==nil, got "%v"`, err)
@@ -184,7 +183,7 @@ func BenchmarkClientStore(b *testing.B) {
 		if err := c.ClientStoreSave(filename, ""); err != nil {
 			b.Fatal(`expected err==nil, got "%v"`, err)
 		}
-		if _, err := c.ClientStoreLoad(filename); err != lmx.ToError(lmx.StatFileReadFailure) {
+		if _, err := c.ClientStoreLoad(filename); err != lmx.ErrFileReadFailure {
 			b.Fatal(`expected err==ErrFileReadFailure, got "%v"`, err)
 		}
 	}

@@ -190,11 +190,11 @@ func (c *cgoClient) ExpireTime(feature string) (t time.Duration, err error) {
 	case ret >= 0:
 		t = time.Hour * ret
 	case ret == -1:
-		err = ToError(StatTooLateDate)
+		err = ErrTooLateDate
 	case ret == -2:
 		err = ErrDoesNotExpire
 	case ret < -2:
-		err = ToError(StatUnknownFailure)
+		err = ErrUnknownFailure
 	}
 	return
 }
@@ -209,7 +209,7 @@ func (c *cgoClient) ServerLog(feature, message string) error {
 
 func (c *cgoClient) ServerFunction(feature, message string) (string, error) {
 	if len(message) >= int(C.LMX_MAX_LONG_STRING_LENGTH) {
-		return "", ToError(StatInvalidParameter)
+		return "", ErrInvalidParameter
 	}
 	cfeature := C.CString(feature)
 	backing := [C.LMX_MAX_LONG_STRING_LENGTH]C.char{}

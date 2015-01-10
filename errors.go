@@ -6,10 +6,69 @@ import "C"
 import "errors"
 
 // ErrDoesNotExpire TODO(rjeczalik)
-var ErrDoesNotExpire = errors.New("The feature does not expire.")
+var ErrDoesNotExpire = errors.New("the feature does not expire")
 
 // ErrNotInitialized TODO(rjeczalik)
-var ErrNotInitialized = errors.New("The LM-X client was not initialized.")
+var ErrNotInitialized = errors.New("the LM-X client was not initialized")
+
+var (
+	ErrUnknownFailure           = newError(StatUnknownFailure)
+	ErrInvalidParameter         = newError(StatInvalidParameter)
+	ErrNoNetwork                = newError(StatNoNetwork)
+	ErrBadLicfile               = newError(StatBadLicfile)
+	ErrNoMemory                 = newError(StatNoMemory)
+	ErrFileReadFailure          = newError(StatFileReadFailure)
+	ErrBadDate                  = newError(StatBadDate)
+	ErrBadKey                   = newError(StatBadKey)
+	ErrFeatureNotFound          = newError(StatFeatureNotFound)
+	ErrBadHostid                = newError(StatBadHostid)
+	ErrTooEarlyDate             = newError(StatTooEarlyDate)
+	ErrTooLateDate              = newError(StatTooLateDate)
+	ErrBadVersion               = newError(StatBadVersion)
+	ErrNetworkFailure           = newError(StatNetworkFailure)
+	ErrNoNetworkHost            = newError(StatNoNetworkHost)
+	ErrNetworkDeny              = newError(StatNetworkDeny)
+	ErrNotEnoughLicenses        = newError(StatNotEnoughLicenses)
+	ErrBadSystemclock           = newError(StatBadSystemclock)
+	ErrTsDeny                   = newError(StatTsDeny)
+	ErrVirtualDeny              = newError(StatVirtualDeny)
+	ErrBorrowTooLong            = newError(StatBorrowTooLong)
+	ErrFileSaveFailure          = newError(StatFileSaveFailure)
+	ErrAlreadyBorrowed          = newError(StatAlreadyBorrowed)
+	ErrBorrowReturnFailure      = newError(StatBorrowReturnFailure)
+	ErrServerBorrowFailure      = newError(StatServerBorrowFailure)
+	ErrBorrowNotEnabled         = newError(StatBorrowNotEnabled)
+	ErrNotBorrowed              = newError(StatNotBorrowed)
+	ErrDongleFailure            = newError(StatDongleFailure)
+	ErrSoftlimit                = newError(StatSoftlimit)
+	ErrBadPlatform              = newError(StatBadPlatform)
+	ErrTokenLoop                = newError(StatTokenLoop)
+	ErrBlacklist                = newError(StatBlacklist)
+	ErrVendorDeny               = newError(StatVendorDeny)
+	ErrNotNetworkFeature        = newError(StatNotNetworkFeature)
+	ErrBadTimezone              = newError(StatBadTimezone)
+	ErrServerNotInUse           = newError(StatServerNotInUse)
+	ErrNotImplemented           = newError(StatNotImplemented)
+	ErrBorrowLimitExceeded      = newError(StatBorrowLimitExceeded)
+	ErrServerFuncFailure        = newError(StatServerFuncFailure)
+	ErrHeartbeatLostLicense     = newError(StatHeartbeatLostLicense)
+	ErrSingleLock               = newError(StatSingleLock)
+	ErrAuthFailure              = newError(StatAuthFailure)
+	ErrNetworkSendFailure       = newError(StatNetworkSendFailure)
+	ErrNetworkReceiveFailure    = newError(StatNetworkReceiveFailure)
+	ErrQueue                    = newError(StatQueue)
+	ErrBadSecurityConfig        = newError(StatBadSecurityConfig)
+	ErrFeatureHalMismatch       = newError(StatFeatureHalMismatch)
+	ErrNotLocalFeature          = newError(StatNotLocalFeature)
+	ErrFeatureNotReplaceable    = newError(StatFeatureNotReplaceable)
+	ErrHostidNotAvailable       = newError(StatHostidNotAvailable)
+	ErrFeatureAlreadyReserved   = newError(StatFeatureAlreadyReserved)
+	ErrFeatureAlreadyCheckedOut = newError(StatFeatureAlreadyCheckedOut)
+	ErrReservationNotFound      = newError(StatReservationNotFound)
+	ErrApiNotReentrant          = newError(StatApiNotReentrant)
+	ErrLicenseUploadFailure     = newError(StatLicenseUploadFailure)
+	ErrInternalLicNotEmbedded   = newError(StatInternalLicNotEmbedded)
+)
 
 // Status TODO(rjeczalik)
 type Status uint8
@@ -88,60 +147,60 @@ func newError(s Status) error {
 
 var statusErrorMap = map[Status]error{
 	StatSuccess:                  nil,
-	StatUnknownFailure:           newError(StatUnknownFailure),
-	StatInvalidParameter:         newError(StatInvalidParameter),
-	StatNoNetwork:                newError(StatNoNetwork),
-	StatBadLicfile:               newError(StatBadLicfile),
-	StatNoMemory:                 newError(StatNoMemory),
-	StatFileReadFailure:          newError(StatFileReadFailure),
-	StatBadDate:                  newError(StatBadDate),
-	StatBadKey:                   newError(StatBadKey),
-	StatFeatureNotFound:          newError(StatFeatureNotFound),
-	StatBadHostid:                newError(StatBadHostid),
-	StatTooEarlyDate:             newError(StatTooEarlyDate),
-	StatTooLateDate:              newError(StatTooLateDate),
-	StatBadVersion:               newError(StatBadVersion),
-	StatNetworkFailure:           newError(StatNetworkFailure),
-	StatNoNetworkHost:            newError(StatNoNetworkHost),
-	StatNetworkDeny:              newError(StatNetworkDeny),
-	StatNotEnoughLicenses:        newError(StatNotEnoughLicenses),
-	StatBadSystemclock:           newError(StatBadSystemclock),
-	StatTsDeny:                   newError(StatTsDeny),
-	StatVirtualDeny:              newError(StatVirtualDeny),
-	StatBorrowTooLong:            newError(StatBorrowTooLong),
-	StatFileSaveFailure:          newError(StatFileSaveFailure),
-	StatAlreadyBorrowed:          newError(StatAlreadyBorrowed),
-	StatBorrowReturnFailure:      newError(StatBorrowReturnFailure),
-	StatServerBorrowFailure:      newError(StatServerBorrowFailure),
-	StatBorrowNotEnabled:         newError(StatBorrowNotEnabled),
-	StatNotBorrowed:              newError(StatNotBorrowed),
-	StatDongleFailure:            newError(StatDongleFailure),
-	StatSoftlimit:                newError(StatSoftlimit),
-	StatBadPlatform:              newError(StatBadPlatform),
-	StatTokenLoop:                newError(StatTokenLoop),
-	StatBlacklist:                newError(StatBlacklist),
-	StatVendorDeny:               newError(StatVendorDeny),
-	StatNotNetworkFeature:        newError(StatNotNetworkFeature),
-	StatBadTimezone:              newError(StatBadTimezone),
-	StatServerNotInUse:           newError(StatServerNotInUse),
-	StatNotImplemented:           newError(StatNotImplemented),
-	StatBorrowLimitExceeded:      newError(StatBorrowLimitExceeded),
-	StatServerFuncFailure:        newError(StatServerFuncFailure),
-	StatHeartbeatLostLicense:     newError(StatHeartbeatLostLicense),
-	StatSingleLock:               newError(StatSingleLock),
-	StatAuthFailure:              newError(StatAuthFailure),
-	StatNetworkSendFailure:       newError(StatNetworkSendFailure),
-	StatNetworkReceiveFailure:    newError(StatNetworkReceiveFailure),
-	StatQueue:                    newError(StatQueue),
-	StatBadSecurityConfig:        newError(StatBadSecurityConfig),
-	StatFeatureHalMismatch:       newError(StatFeatureHalMismatch),
-	StatNotLocalFeature:          newError(StatNotLocalFeature),
-	StatFeatureNotReplaceable:    newError(StatFeatureNotReplaceable),
-	StatHostidNotAvailable:       newError(StatHostidNotAvailable),
-	StatFeatureAlreadyReserved:   newError(StatFeatureAlreadyReserved),
-	StatFeatureAlreadyCheckedOut: newError(StatFeatureAlreadyCheckedOut),
-	StatReservationNotFound:      newError(StatReservationNotFound),
-	StatApiNotReentrant:          newError(StatApiNotReentrant),
-	StatLicenseUploadFailure:     newError(StatLicenseUploadFailure),
-	StatInternalLicNotEmbedded:   newError(StatInternalLicNotEmbedded),
+	StatUnknownFailure:           ErrUnknownFailure,
+	StatInvalidParameter:         ErrInvalidParameter,
+	StatNoNetwork:                ErrNoNetwork,
+	StatBadLicfile:               ErrBadLicfile,
+	StatNoMemory:                 ErrNoMemory,
+	StatFileReadFailure:          ErrFileReadFailure,
+	StatBadDate:                  ErrBadDate,
+	StatBadKey:                   ErrBadKey,
+	StatFeatureNotFound:          ErrFeatureNotFound,
+	StatBadHostid:                ErrBadHostid,
+	StatTooEarlyDate:             ErrTooEarlyDate,
+	StatTooLateDate:              ErrTooLateDate,
+	StatBadVersion:               ErrBadVersion,
+	StatNetworkFailure:           ErrNetworkFailure,
+	StatNoNetworkHost:            ErrNoNetworkHost,
+	StatNetworkDeny:              ErrNetworkDeny,
+	StatNotEnoughLicenses:        ErrNotEnoughLicenses,
+	StatBadSystemclock:           ErrBadSystemclock,
+	StatTsDeny:                   ErrTsDeny,
+	StatVirtualDeny:              ErrVirtualDeny,
+	StatBorrowTooLong:            ErrBorrowTooLong,
+	StatFileSaveFailure:          ErrFileSaveFailure,
+	StatAlreadyBorrowed:          ErrAlreadyBorrowed,
+	StatBorrowReturnFailure:      ErrBorrowReturnFailure,
+	StatServerBorrowFailure:      ErrServerBorrowFailure,
+	StatBorrowNotEnabled:         ErrBorrowNotEnabled,
+	StatNotBorrowed:              ErrNotBorrowed,
+	StatDongleFailure:            ErrDongleFailure,
+	StatSoftlimit:                ErrSoftlimit,
+	StatBadPlatform:              ErrBadPlatform,
+	StatTokenLoop:                ErrTokenLoop,
+	StatBlacklist:                ErrBlacklist,
+	StatVendorDeny:               ErrVendorDeny,
+	StatNotNetworkFeature:        ErrNotNetworkFeature,
+	StatBadTimezone:              ErrBadTimezone,
+	StatServerNotInUse:           ErrServerNotInUse,
+	StatNotImplemented:           ErrNotImplemented,
+	StatBorrowLimitExceeded:      ErrBorrowLimitExceeded,
+	StatServerFuncFailure:        ErrServerFuncFailure,
+	StatHeartbeatLostLicense:     ErrHeartbeatLostLicense,
+	StatSingleLock:               ErrSingleLock,
+	StatAuthFailure:              ErrAuthFailure,
+	StatNetworkSendFailure:       ErrNetworkSendFailure,
+	StatNetworkReceiveFailure:    ErrNetworkReceiveFailure,
+	StatQueue:                    ErrQueue,
+	StatBadSecurityConfig:        ErrBadSecurityConfig,
+	StatFeatureHalMismatch:       ErrFeatureHalMismatch,
+	StatNotLocalFeature:          ErrNotLocalFeature,
+	StatFeatureNotReplaceable:    ErrFeatureNotReplaceable,
+	StatHostidNotAvailable:       ErrHostidNotAvailable,
+	StatFeatureAlreadyReserved:   ErrFeatureAlreadyReserved,
+	StatFeatureAlreadyCheckedOut: ErrFeatureAlreadyCheckedOut,
+	StatReservationNotFound:      ErrReservationNotFound,
+	StatApiNotReentrant:          ErrApiNotReentrant,
+	StatLicenseUploadFailure:     ErrLicenseUploadFailure,
+	StatInternalLicNotEmbedded:   ErrInternalLicNotEmbedded,
 }
